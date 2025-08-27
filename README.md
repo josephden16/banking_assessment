@@ -68,25 +68,26 @@ This is an intentionally basic implementation with clear areas for improvement. 
 
 - Node.js (v14 or higher)
 - npm
+- pnpm
 
 ### Installation
 
 ```bash
 # Install all dependencies (root, client, and server)
-npm run install-all
+pnpm install-all
 ```
 
 ### Running the Application
 
 ```bash
 # Start both frontend and backend servers
-npm run dev
+pnpm dev
 ```
 
 The application will be available at:
 
 - Frontend: http://localhost:5173
-- Backend API: http://localhost:3001
+- Backend API: http://localhost:3003
 
 ## API Endpoints
 
