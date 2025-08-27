@@ -1,78 +1,135 @@
-/**
- * AccountList Component
- *
- * TECHNICAL ASSESSMENT NOTES:
- * This is a basic implementation with intentional areas for improvement:
- * - Basic error handling
- * - Simple loading state
- * - No skeleton loading
- * - No retry mechanism
- * - No pagination
- * - No sorting/filtering
- * - No animations
- * - No accessibility features
- * - No tests
- *
- * Candidates should consider:
- * - Component structure
- * - Error boundary implementation
- * - Loading states and animations
- * - User feedback
- * - Performance optimization
- * - Accessibility (ARIA labels, keyboard navigation)
- * - Testing strategy
- */
+"use client";
 
-import { useState, useEffect } from "react";
-import { Account } from "../types";
-import { getAccounts } from "../api";
+import { useState } from "react";
+import { useAccounts } from "../hooks/useAccount";
+import { TransactionList } from "./TransactionList";
+import { NewTransactionForm } from "./NewTransactionForm";
 import styles from "./AccountList.module.css";
 
 export function AccountList() {
-  // Basic state management - Consider using more robust state management for larger applications
-  const [accounts, setAccounts] = useState<Account[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { data: accounts = [], isLoading, error, refetch } = useAccounts();
+  const [selectedAccountId, setSelectedAccountId] = useState<string | null>(
+    null
+  );
+  const [showTransactionForm, setShowTransactionForm] = useState<string | null>(
+    null
+  );
 
-  // Data fetching - Consider implementing retry logic, caching, and better error handling
-  useEffect(() => {
-    const fetchAccounts = async () => {
-      try {
-        const data = await getAccounts();
-        setAccounts(data);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "An error occurred");
-      } finally {
-        setLoading(false);
-      }
-    };
+  const viewAccountTransactions = (accountId: string) => {
+    setSelectedAccountId(accountId);
+  };
 
-    fetchAccounts();
-  }, []);
+  const handleNewTransaction = (accountId: string) => {
+    setShowTransactionForm(accountId);
+  };
 
-  // Basic loading and error states - Consider implementing skeleton loading and error boundaries
-  if (loading) return <div>Loading...</div>;
-  if (error) return <div>Error: {error}</div>;
+  const handleTransactionCreated = () => {};
 
-  // Basic render logic - Consider implementing:
-  // - Sorting and filtering
-  // - Pagination
-  // - Search functionality
-  // - More interactive features
-  // - Accessibility improvements
+  if (isLoading) {
+    return (
+      <div className={styles.container}>
+        <div className={styles.loading} role="status" aria-live="polite">
+          <div className={styles.spinner} aria-hidden="true"></div>
+          Loading accounts...
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className={styles.container}>
+        <div className={styles.error} role="alert">
+          <h3>Error Loading Accounts</h3>
+          <p>
+            {error instanceof Error
+              ? error.message
+              : "An unexpected error occurred"}
+          </p>
+          <button
+            onClick={() => refetch()}
+            className={styles.retryButton}
+            aria-label="Retry loading accounts"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className={styles.container}>
-      <h2>Accounts</h2>
-      <div className={styles.grid}>
+      <div className={styles.header}>
+        <h2>Accounts</h2>
+        <p className={styles.subtitle}>
+          Manage your banking accounts and transactions
+        </p>
+      </div>
+
+      <div className={styles.grid} role="list">
         {accounts.map((account) => (
-          <div key={account.id} className={styles.card}>
-            <h3>{account.accountHolder}</h3>
-            <p>Account Number: {account.accountNumber}</p>
-            <p>Type: {account.accountType}</p>
-            <p>Balance: ${account.balance.toFixed(2)}</p>
+          <div key={account.id} className={styles.card} role="listitem">
+            <div className={styles.cardHeader}>
+              <h3>{account.accountHolder}</h3>
+              <span
+                className={`${styles.accountType} ${
+                  styles[account.accountType.toLowerCase()]
+                }`}
+              >
+                {account.accountType}
+              </span>
+            </div>
+
+            <div className={styles.cardContent}>
+              <p className={styles.accountNumber}>
+                Account: {account.accountNumber}
+              </p>
+              <p className={styles.balance}>
+                Balance:{" "}
+                <span className={styles.balanceAmount}>
+                  ${account.balance.toFixed(2)}
+                </span>
+              </p>
+              <p className={styles.createdDate}>
+                Created: {new Date(account.createdAt).toLocaleDateString()}
+              </p>
+            </div>
+
+            <div className={styles.cardActions}>
+              <button
+                onClick={() => viewAccountTransactions(account.id)}
+                className={styles.primaryButton}
+                aria-label={`View transactions for ${account.accountHolder}'s account`}
+              >
+                View Transactions
+              </button>
+              <button
+                onClick={() => handleNewTransaction(account.id)}
+                className={styles.secondaryButton}
+                aria-label={`Create new transaction for ${account.accountHolder}'s account`}
+              >
+                New Transaction
+              </button>
+            </div>
           </div>
         ))}
       </div>
+
+      {selectedAccountId && (
+        <TransactionList
+          accountId={selectedAccountId}
+          onClose={() => setSelectedAccountId(null)}
+        />
+      )}
+
+      {showTransactionForm && (
+        <NewTransactionForm
+          accountId={showTransactionForm}
+          onClose={() => setShowTransactionForm(null)}
+          onTransactionCreated={handleTransactionCreated}
+        />
+      )}
     </div>
   );
 }

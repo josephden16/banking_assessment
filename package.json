@@ -3,12 +3,16 @@
   "version": "1.0.0",
   "description": "Banking Dashboard Application",
   "scripts": {
-    "client": "cd client && npm run dev",
-    "server": "cd server && npm run dev",
-    "dev": "concurrently \"npm run server\" \"npm run client\"",
-    "install-all": "npm install && cd client && npm install && cd ../server && npm install"
+    "client": "cd client && pnpm run dev",
+    "server": "cd server && pnpm run dev",
+    "dev": "concurrently \"pnpm run server\" \"pnpm run client\"",
+    "install-all": "pnpm install && cd client && pnpm install && cd ../server && pnpm install"
   },
   "devDependencies": {
+    "@types/sanitize-html": "^2.16.0",
     "concurrently": "^8.2.2"
+  },
+  "dependencies": {
+    "sanitize-html": "^2.17.0"
   }
 }
