@@ -13,8 +13,8 @@ interface TransactionListProps {
 export function TransactionList({ accountId, onClose }: TransactionListProps) {
   const [filters, setFilters] = useState<TransactionFilters>({
     type: "",
-    sortBy: "date",
-    sortOrder: "desc",
+    sortBy: "createdAt",
+    sortOrder: "DESC",
   });
   const [pagination, setPagination] = useState<PaginationInfo>({
     currentPage: 1,
@@ -154,8 +154,8 @@ export function TransactionList({ accountId, onClose }: TransactionListProps) {
             value={`${filters.sortBy}-${filters.sortOrder}`}
             onChange={(e) => {
               const [sortBy, sortOrder] = e.target.value.split("-") as [
-                "date" | "amount",
-                "asc" | "desc"
+                "createdAt" | "amount",
+                "ASC" | "DESC"
               ];
               handleFilterChange({
                 sortBy,
@@ -165,10 +165,10 @@ export function TransactionList({ accountId, onClose }: TransactionListProps) {
             className={styles.filterSelect}
             aria-label="Sort transactions"
           >
-            <option value="date-desc">Date (Newest First)</option>
-            <option value="date-asc">Date (Oldest First)</option>
-            <option value="amount-desc">Amount (Highest First)</option>
-            <option value="amount-asc">Amount (Lowest First)</option>
+            <option value="createdAt-DESC">Date (Newest First)</option>
+            <option value="createdAt-ASC">Date (Oldest First)</option>
+            <option value="amount-DESC">Amount (Highest First)</option>
+            <option value="amount-ASC">Amount (Lowest First)</option>
           </select>
         </div>
 

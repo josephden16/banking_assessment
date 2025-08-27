@@ -18,12 +18,12 @@ export interface AccountTransaction {
 
 export interface TransactionFilters {
   type?: "DEPOSIT" | "WITHDRAWAL" | "TRANSFER" | "";
-  sortBy?: "date" | "amount";
-  sortOrder?: "asc" | "desc";
+  sortBy?: "createdAt" | "amount";
+  sortOrder?: "ASC" | "DESC";
 }
 
 export interface TransactionRequest {
-  type: "DEPOSIT" | "WITHDRAWAL" | "TRANSFER";
+  transactionType: "DEPOSIT" | "WITHDRAWAL" | "TRANSFER";
   amount: number;
   description: string;
   recipientAccount?: string;

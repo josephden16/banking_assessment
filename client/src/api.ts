@@ -53,9 +53,9 @@ export const getAccountTransactions = async (
   id: string,
   page = 1,
   limit = 10,
-  type?: string,
-  sortBy?: string,
-  sortOrder?: string
+  type?: "DEPOSIT" | "WITHDRAWAL" | "TRANSFER",
+  sortBy?: "createdAt" | "amount" | "transactionType",
+  sortOrder?: "ASC" | "DESC"
 ): Promise<TransactionResponse> => {
   try {
     const params = new URLSearchParams({
@@ -73,22 +73,7 @@ export const getAccountTransactions = async (
       await handleApiError(response);
     }
 
-    const data = await response.json();
-
-    // Handle both array response (legacy) and paginated response
-    if (Array.isArray(data)) {
-      return {
-        transactions: data,
-        pagination: {
-          page,
-          limit,
-          total: data.length,
-          totalPages: 1,
-        },
-      };
-    }
-
-    return data;
+    return response.json();
   } catch (error) {
     if (error instanceof Error) {
       throw error;

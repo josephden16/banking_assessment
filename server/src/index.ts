@@ -85,6 +85,15 @@ const TransactionSchema = z.object({
   recipientAccountId: z.string().uuid().optional(),
 });
 
+// New schema for transaction queries
+const TransactionQuerySchema = z.object({
+  page: z.coerce.number().min(1).default(1),
+  limit: z.coerce.number().min(1).default(10),
+  type: z.enum(["DEPOSIT", "WITHDRAWAL", "TRANSFER"]).optional(),
+  sortBy: z.enum(["createdAt", "amount", "transactionType"]).optional(),
+  sortOrder: z.enum(["ASC", "DESC"]).optional(),
+});
+
 /**
  * Initializes database tables and indexes
  */
@@ -115,6 +124,8 @@ function initializeDatabase() {
     CREATE INDEX IF NOT EXISTS idx_accounts_accountNumber ON accounts(accountNumber);
     CREATE INDEX IF NOT EXISTS idx_transactions_accountId ON transactions(accountId);
     CREATE INDEX IF NOT EXISTS idx_transactions_createdAt ON transactions(createdAt);
+    CREATE INDEX IF NOT EXISTS idx_transactions_type ON transactions(transactionType);
+    CREATE INDEX IF NOT EXISTS idx_transactions_amount ON transactions(amount);
   `;
 
   db.serialize(() => {
@@ -479,13 +490,9 @@ app.post(
 app.get(
   "/api/accounts/:id/transactions",
   async (req: Request, res: Response) => {
-    const schema = z.object({
-      page: z.coerce.number().min(1).default(1),
-      limit: z.coerce.number().min(1).default(10),
-    });
-
-    const parsed = schema.safeParse(req.query);
+    const parsed = TransactionQuerySchema.safeParse(req.query);
     if (!parsed.success) {
+      console.log(parsed.error);
       return res.status(400).json({
         error: {
           message: "Invalid query parameters",
@@ -494,25 +501,68 @@ app.get(
       });
     }
 
-    const { page, limit } = parsed.data;
+    const { page, limit, type, sortBy, sortOrder } = parsed.data;
     const offset = (page - 1) * limit;
     const accountId = sanitizeInput(req.params.id);
 
-    db.all(
-      "SELECT * FROM transactions WHERE accountId = ? ORDER BY createdAt DESC LIMIT ? OFFSET ?",
-      [accountId, limit, offset],
-      (err, rows) => {
-        if (err) {
-          return res.status(500).json({
-            error: {
-              message: "Failed to fetch transactions",
-              timestamp: new Date().toISOString(),
-            },
+    // Build SQL query dynamically
+    let query = "SELECT * FROM transactions WHERE accountId = ?";
+    const params: (string | number)[] = [accountId];
+
+    if (type) {
+      query += " AND transactionType = ?";
+      params.push(type);
+    }
+
+    if (sortBy) {
+      query += ` ORDER BY ${sortBy} ${sortOrder || "DESC"}`;
+    } else {
+      query += " ORDER BY createdAt DESC";
+    }
+
+    query += " LIMIT ? OFFSET ?";
+    params.push(limit, offset);
+
+    // Get total count for pagination
+    const countQuery = `SELECT COUNT(*) as total FROM transactions WHERE accountId = ?${
+      type ? " AND transactionType = ?" : ""
+    }`;
+    const countParams = type ? [accountId, type] : [accountId];
+
+    try {
+      const [rows, countResult] = await Promise.all([
+        new Promise<any[]>((resolve, reject) => {
+          db.all(query, params, (err, rows) => {
+            if (err) reject(err);
+            else resolve(rows);
           });
-        }
-        res.json(rows);
-      }
-    );
+        }),
+        new Promise<any>((resolve, reject) => {
+          db.get(countQuery, countParams, (err, row) => {
+            if (err) reject(err);
+            else resolve(row);
+          });
+        }),
+      ]);
+
+      res.json({
+        transactions: rows,
+        pagination: {
+          page,
+          limit,
+          total: countResult.total,
+          totalPages: Math.ceil(countResult.total / limit),
+        },
+      });
+    } catch (err) {
+      console.error({ err });
+      return res.status(500).json({
+        error: {
+          message: "Failed to fetch transactions",
+          timestamp: new Date().toISOString(),
+        },
+      });
+    }
   }
 );
 

@@ -18,7 +18,7 @@ export function NewTransactionForm({
   onTransactionCreated,
 }: NewTransactionFormProps) {
   const [formData, setFormData] = useState<TransactionRequest>({
-    type: "DEPOSIT",
+    transactionType: "DEPOSIT",
     amount: 0,
     description: "",
   });
@@ -47,7 +47,10 @@ export function NewTransactionForm({
       errors.description = "Description cannot exceed 200 characters";
     }
 
-    if (formData.type === "TRANSFER" && !formData.recipientAccount?.trim()) {
+    if (
+      formData.transactionType === "TRANSFER" &&
+      !formData.recipientAccount?.trim()
+    ) {
       errors.recipientAccount =
         "Recipient account number is required for transfers";
     }
@@ -114,8 +117,10 @@ export function NewTransactionForm({
             </label>
             <select
               id="transactionType"
-              value={formData.type}
-              onChange={(e) => handleInputChange("type", e.target.value)}
+              value={formData.transactionType}
+              onChange={(e) =>
+                handleInputChange("transactionType", e.target.value)
+              }
               className={styles.select}
               required
               aria-describedby="transactionType-help"
@@ -167,7 +172,7 @@ export function NewTransactionForm({
             )}
           </div>
 
-          {formData.type === "TRANSFER" && (
+          {formData.transactionType === "TRANSFER" && (
             <div className={styles.formGroup}>
               <label htmlFor="recipientAccount" className={styles.label}>
                 Recipient Account Number *
